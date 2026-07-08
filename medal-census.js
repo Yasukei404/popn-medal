@@ -12,7 +12,7 @@ function diff(li) {
   var a = li.querySelectorAll("*"); for (i = 0; i < a.length; i++) { x = (a[i].className || "").toString().toLowerCase(); if (/(^|[^a-z])ex([^a-z]|$)/.test(x)) return "EX"; if (/hyper/.test(x)) return "HYPER"; if (/normal/.test(x)) return "NORMAL"; if (/light|easy/.test(x)) return "LIGHT"; }
   x = (li.textContent || "").toUpperCase(); if (/(^|[^A-Z])EX([^A-Z]|$)/.test(x)) return "EX"; if (/HYPER/.test(x)) return "HYPER"; if (/NORMAL/.test(x)) return "NORMAL"; if (/LIGHT|EASY/.test(x)) return "LIGHT"; return "unknown";
 }
-var O = [["a", "★", "r", "パーフェクト"], ["b", "★", "#9aa4ad", "フルコンボ"], ["c", "◆", "#9aa4ad", "フルコンボ"], ["d", "●", "#9aa4ad", "フルコンボ"], ["e", "★", "#e2445c", "クリア"], ["f", "◆", "#e2445c", "クリア"], ["g", "●", "#e2445c", "クリア"], ["l", "✿", "#f0932b", "ロングオフクリア"], ["k", "✿", "#3aae5a", "イージークリア"], ["h", "★", "#3a7bd5", "クリア失敗"], ["i", "◆", "#3a7bd5", "クリア失敗"], ["j", "●", "#3a7bd5", "クリア失敗"], ["none", "–", "#bbb", "メダルなし"]];
+var O = [["a", "★", "r", "パーフェクト"], ["b", "★", "#9aa4ad", "フルコンボ"], ["c", "◆", "#9aa4ad", "フルコンボ"], ["d", "●", "#9aa4ad", "フルコンボ"], ["e", "★", "#e2445c", "クリア"], ["f", "◆", "#e2445c", "クリア"], ["g", "●", "#e2445c", "クリア"], ["l", "✿", "#f0932b", "ロングオフクリア"], ["k", "✿", "#3aae5a", "イージークリア"], ["h", "★", "#3a7bd5", "クリア失敗"], ["i", "◆", "#3a7bd5", "クリア失敗"], ["j", "●", "#3a7bd5", "クリア失敗"], ["none", "○", "#bbb", "メダルなし"]];
 var F = ["LIGHT", "NORMAL", "HYPER", "EX"], FC = { LIGHT: "#3a7bd5", NORMAL: "#2e9e4f", HYPER: "#c98a00", EX: "#d82f66", unknown: "#888" }, CL = { LIGHT: "LIGHT", NORMAL: "NORMAL", HYPER: "HYPER", EX: "EX", unknown: "不明" };
 
 function setStatus(t) { var e = D.getElementById("mcst"); if (e) e.textContent = t; }
@@ -48,10 +48,11 @@ function render(A, meta) {
   O.forEach(function (o, ix) { cols.forEach(function (k) { TT[k] += C[o[0]][k]; if (ix < 9) TC[k] += C[o[0]][k]; }); });
   var FT = '<tr class=f><td class=l>クリア / 総数</td>'; cols.forEach(function (k) { FT += '<td class=b>' + TC[k] + ' <span class=n style="color:#888;font-weight:normal;font-size:11px">/ ' + TT[k] + "</span></td>"; gt += TT[k]; gc += TC[k]; }); FT += '<td class=b>' + gc + ' <span class=n style="color:#888;font-weight:normal;font-size:11px">/ ' + gt + "</span></td></tr>";
   var ts = meta.t ? new Date(meta.t).toLocaleString() : "";
-  var lab = (meta.cached ? "前回取得 " + ts + "（キャッシュ）" : "最終更新 " + ts);
+  var lab = (meta.cached ? "前回取得 " + ts + "（キャッシュ・0リクエスト）" + (meta.stale ? " ⚠古い可能性→更新" : "") : "最終更新 " + ts);
   var bar = '<div id=mcbar><span id=mcst>' + lab + '</span><button id=mcbtn>更新</button></div>';
-  b.innerHTML = "<style>#mc{font:13px sans-serif;color:#333;padding:16px}#mc table{border-collapse:collapse;background:#feffb7;margin:0 auto;width:auto!important;max-width:560px;table-layout:auto}#mc td,#mc th{width:auto!important}#mc td,#mc th{padding:3px 8px;text-align:center;border-bottom:1px solid #f0e9a0}#mc th{border-bottom:2px solid #d82f66;font-size:12px}#mc .l{text-align:left;white-space:nowrap}#mc .b{font-weight:bold}#mc .s{font-size:17px}#mc .d{border-top:2px solid #888}#mc .f td{border-top:2px solid #d82f66;font-weight:bold}#mc .n{white-space:nowrap}#mc h2{color:#d82f66;font-size:16px;text-align:center;margin:0 0 10px}#mcbar{max-width:560px;margin:8px auto 0;text-align:center;font-size:11px;color:#888}#mcbtn{margin-left:8px;font-size:11px;cursor:pointer}</style>" +
-    '<div id=mc><h2>TOTAL MEDALS</h2><table><thead>' + H + "</thead><tbody>" + BD + FT + "</tbody></table>" + bar + "</div>";
+  var tstyle = "width:auto!important;max-width:560px!important;min-width:0!important;table-layout:auto!important;margin:0 auto!important;border-collapse:collapse!important;background:#feffb7!important";
+  b.innerHTML = "<style>#mc{font:13px sans-serif;color:#333;padding:16px}#mc td,#mc th{padding:3px 8px!important;text-align:center;border-bottom:1px solid #f0e9a0;width:auto!important;white-space:normal}#mc th{border-bottom:2px solid #d82f66;font-size:12px}#mc .l{text-align:left;white-space:nowrap}#mc .b{font-weight:bold}#mc .s{font-size:17px;display:inline-block;width:1.4em;text-align:center}#mc .d{border-top:2px solid #888}#mc .f td{border-top:2px solid #d82f66;font-weight:bold}#mc .n{white-space:nowrap}#mc h2{color:#d82f66;font-size:16px;text-align:center;margin:0 0 10px}#mcbar{max-width:560px;margin:8px auto 0;text-align:center;font-size:11px;color:#888}#mcbtn{margin-left:8px;font-size:11px;cursor:pointer}</style>" +
+    '<div id=mc><h2>TOTAL MEDALS</h2><table style="' + tstyle + '"><thead>' + H + "</thead><tbody>" + BD + FT + "</tbody></table>" + bar + "</div>";
   var btn = D.getElementById("mcbtn"); if (btn) btn.onclick = function () { btn.disabled = true; refresh(); };
 }
 async function refresh() {
@@ -63,8 +64,7 @@ async function refresh() {
 
 var ch = load();
 if (ch && ch.v == VER && ch.C) {
-  render({ C: ch.C, cols: ch.cols, n: ch.n }, { t: ch.t, cached: true });
-  if (Date.now() - ch.t >= TTL) refresh();
+  render({ C: ch.C, cols: ch.cols, n: ch.n }, { t: ch.t, cached: true, stale: Date.now() - ch.t >= TTL });
 } else {
   b.innerHTML = '<div id=mcst style="padding:24px;font:14px sans-serif;text-align:center;color:#333">取得中…</div>';
   refresh();
