@@ -2,6 +2,8 @@
 
 pop'n music の e-amusement プレーデータから、**難易度（LIGHT / NORMAL / HYPER / EX）× メダル種別**の枚数を集計して `TOTAL MEDALS` 表を表示するブックマークレットです。画像は使わず色付き記号で表示します。外部への送信は一切ありません（ローカル表示のみ）。
 
+▶ **かんたんインストール（コピーボタン付き・スマホ対応）: https://yasukei404.github.io/popn-medal/**
+
 ## 使い方
 
 e-amusement のベーシックコース登録済みアカウントが必要です。
