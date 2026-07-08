@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>popn-medal インストール</title>
+<style>
+  :root { --pink:#d82f66; --cream:#feffb7; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", sans-serif; color:#333; background:#fbfbe6; line-height:1.7; }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1 { color: var(--pink); font-size: 22px; margin: 8px 0 4px; text-align:center; }
+  .lead { text-align:center; color:#666; font-size:13px; margin:0 0 20px; }
+  .card { background:#fff; border-radius:12px; box-shadow:0 1px 8px rgba(0,0,0,.1); padding:16px; margin:16px 0; }
+  h2 { font-size:15px; margin:0 0 10px; padding-left:10px; border-left:4px solid var(--pink); }
+  textarea#code { width:100%; height:96px; font-family: ui-monospace, monospace; font-size:12px; padding:10px; border:1px solid #ddd; border-radius:8px; background:#fafafa; color:#333; resize:vertical; -webkit-user-select:all; user-select:all; }
+  .row { display:flex; gap:10px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+  button#copyBtn { flex:1 1 auto; min-width:160px; padding:14px 18px; font-size:16px; font-weight:bold; color:#fff; background:var(--pink); border:0; border-radius:10px; cursor:pointer; }
+  button#copyBtn:active { transform: translateY(1px); }
+  .ok { color:#2e9e4f; font-weight:bold; font-size:14px; }
+  .drag { display:inline-block; padding:10px 16px; background:var(--cream); border:2px solid var(--pink); border-radius:10px; color:#333; text-decoration:none; font-weight:bold; }
+  ol, ul { margin:8px 0 0; padding-left:1.4em; }
+  li { margin:6px 0; font-size:14px; }
+  code { background:#f0f0f0; padding:1px 5px; border-radius:4px; font-size:12px; }
+  .note { font-size:12px; color:#777; background:#fff8e6; border:1px solid #f0e0a0; border-radius:8px; padding:10px; margin-top:12px; }
+  .cols { display:flex; gap:6px; justify-content:center; margin:6px 0 0; }
+  .cols span { width:26px; height:8px; border-radius:3px; }
+  footer { text-align:center; color:#999; font-size:11px; margin-top:24px; }
+  footer a { color:#999; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>popn-medal インストール</h1>
+  <p class="lead">pop'n music の TOTAL MEDALS を難易度別に集計するブックマークレット</p>
+  <div class="cols"><span style="background:#3a7bd5"></span><span style="background:#2e9e4f"></span><span style="background:#c98a00"></span><span style="background:#d82f66"></span></div>
+
+  <div class="card">
+    <h2>1. コードをコピー</h2>
+    <textarea id="code" readonly spellcheck="false"></textarea>
+    <div class="row">
+      <button id="copyBtn" type="button">コピー</button>
+      <span id="okMsg" class="ok" style="display:none">コピーしました ✓</span>
+    </div>
+    <p style="font-size:13px;margin:12px 0 0">パソコンの方は、下のリンクをブックマークバーへ<b>ドラッグ＆ドロップ</b>するだけでも登録できます：</p>
+    <p style="margin:8px 0 0"><a class="drag" id="dragLink" href="#">★ ポップンメダル集計</a></p>
+  </div>
+
+  <div class="card">
+    <h2>2. ブックマークに登録</h2>
+    <p style="font-size:13px;margin:0"><b>パソコン</b></p>
+    <ol>
+      <li>上のリンクをブックマークバーにドラッグ。または「コピー」後、ブックマークを新規作成し、<b>URL欄に貼り付け</b>。</li>
+    </ol>
+    <p style="font-size:13px;margin:12px 0 0"><b>iPhone / iPad（Safari）</b></p>
+    <ol>
+      <li>「コピー」を押す。</li>
+      <li>このページで共有ボタン →「ブックマークを追加」で適当に保存。</li>
+      <li>ブックマーク一覧 → いま追加したものを「編集」。</li>
+      <li>URL欄を<b>全部消して</b>、コピーしたコードを貼り付け → 保存。</li>
+    </ol>
+    <p style="font-size:13px;margin:12px 0 0"><b>Android（Chrome）</b></p>
+    <ol>
+      <li>「コピー」を押す。</li>
+      <li>このページで ⋮ →「☆」でブックマーク保存。</li>
+      <li>ブックマークを開いて鉛筆（編集）→ URLを<b>貼り付けたコードに置き換え</b> → 保存。</li>
+    </ol>
+    <div class="note">スマホでは、貼り付け後に URL が <code>javascript:</code> で始まっているか確認してください。先頭の <code>javascript:</code> が消えてしまう場合は、手入力で補ってください。</div>
+  </div>
+
+  <div class="card">
+    <h2>3. 使い方</h2>
+    <ol>
+      <li>e-amusement にログインした状態で、pop'n のプレーデータのページ（<code>p.eagate.573.jp/game/popn/popn29/playdata/index.html</code>）を開く。</li>
+      <li>登録したブックマークをタップ／クリック。初回は全走査のため数分かかります。</li>
+      <li>2 回目以降はキャッシュが即表示されます。最新化は表の右下「更新」ボタンで。</li>
+    </ol>
+    <div class="note">e-amusement のベーシックコース登録済みアカウントが必要です。開発中のため、メダル数が正しくない場合があります。表示のみでデータの外部送信はありません。</div>
+  </div>
+
+  <footer>
+    <a href="https://github.com/Yasukei404/popn-medal" target="_blank" rel="noopener">GitHub リポジトリ</a>
+  </footer>
+</div>
+
+<script>
+  var BM = 'javascript:void function(d){var s=d.createElement("script");s.src="https://cdn.jsdelivr.net/gh/Yasukei404/popn-medal@v3/medal-census.js";d.head.appendChild(s)}(document);';
+  var ta = document.getElementById('code');
+  ta.value = BM;
+  document.getElementById('dragLink').setAttribute('href', BM);
+
+  function showOk() {
+    var m = document.getElementById('okMsg');
+    m.style.display = 'inline';
+    setTimeout(function () { m.style.display = 'none'; }, 2500);
+  }
+  function fallbackCopy() {
+    ta.removeAttribute('readonly');
+    ta.focus();
+    ta.select();
+    try { ta.setSelectionRange(0, BM.length); } catch (e) {}
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    ta.setAttribute('readonly', '');
+    window.getSelection && window.getSelection().removeAllRanges();
+    if (ok) showOk();
+    else alert('自動コピーに失敗しました。上の枠のコードを長押し（または全選択）して手動でコピーしてください。');
+  }
+  document.getElementById('copyBtn').addEventListener('click', function () {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(BM).then(showOk, fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
+  });
+  // ドラッグ用リンクは誤クリックでも遷移しないようにする（ドラッグ専用）
+  document.getElementById('dragLink').addEventListener('click', function (e) {
+    e.preventDefault();
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(BM).then(showOk, function(){});
+  });
+</script>
+</body>
+</html>
