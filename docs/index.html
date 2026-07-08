@@ -15,7 +15,7 @@
   h2 { font-size:15px; margin:0 0 10px; padding-left:10px; border-left:4px solid var(--pink); }
   textarea#code { width:100%; height:96px; font-family: ui-monospace, monospace; font-size:12px; padding:10px; border:1px solid #ddd; border-radius:8px; background:#fafafa; color:#333; resize:vertical; -webkit-user-select:all; user-select:all; }
   .row { display:flex; gap:10px; align-items:center; margin-top:10px; flex-wrap:wrap; }
-  button#copyBtn { flex:1 1 auto; min-width:160px; padding:14px 18px; font-size:16px; font-weight:bold; color:#fff; background:var(--pink); border:0; border-radius:10px; cursor:pointer; }
+  button#copyBtn { display:block; width:100%; margin-top:12px; padding:14px 18px; font-size:16px; font-weight:bold; color:#fff; background:var(--pink); border:0; border-radius:10px; cursor:pointer; transition:background .2s; }
   button#copyBtn:active { transform: translateY(1px); }
   .ok { color:#2e9e4f; font-weight:bold; font-size:14px; }
   .drag { display:inline-block; padding:10px 16px; background:var(--cream); border:2px solid var(--pink); border-radius:10px; color:#333; text-decoration:none; font-weight:bold; }
@@ -38,19 +38,14 @@
   <div class="card">
     <h2>1. コードをコピー</h2>
     <textarea id="code" readonly spellcheck="false"></textarea>
-    <div class="row">
-      <button id="copyBtn" type="button">コピー</button>
-      <span id="okMsg" class="ok" style="display:none">コピーしました ✓</span>
-    </div>
-    <p style="font-size:13px;margin:12px 0 0">パソコンの方は、下のリンクをブックマークバーへ<b>ドラッグ＆ドロップ</b>するだけでも登録できます：</p>
-    <p style="margin:8px 0 0"><a class="drag" id="dragLink" href="#">★ ポップンメダル集計</a></p>
+    <button id="copyBtn" type="button">コピー</button>
   </div>
 
   <div class="card">
     <h2>2. ブックマークに登録</h2>
     <p style="font-size:13px;margin:0"><b>パソコン</b></p>
     <ol>
-      <li>上のリンクをブックマークバーにドラッグ。または「コピー」後、ブックマークを新規作成し、<b>URL欄に貼り付け</b>。</li>
+      <li>「コピー」を押し、ブックマークを新規作成して<b>URL欄に貼り付け</b>。（ブラウザのブックマークマネージャーの「新規追加」から作成できます）</li>
     </ol>
     <p style="font-size:13px;margin:12px 0 0"><b>iPhone / iPad（Safari）</b></p>
     <ol>
@@ -87,12 +82,13 @@
   var BM = 'javascript:void function(d){var s=d.createElement("script");s.src="https://cdn.jsdelivr.net/gh/Yasukei404/popn-medal@v3/medal-census.js";d.head.appendChild(s)}(document);';
   var ta = document.getElementById('code');
   ta.value = BM;
-  document.getElementById('dragLink').setAttribute('href', BM);
-
+  var btn = document.getElementById('copyBtn');
+  var revertTimer;
   function showOk() {
-    var m = document.getElementById('okMsg');
-    m.style.display = 'inline';
-    setTimeout(function () { m.style.display = 'none'; }, 2500);
+    btn.textContent = 'コピーしました ✓';
+    btn.style.background = '#2e9e4f';
+    clearTimeout(revertTimer);
+    revertTimer = setTimeout(function () { btn.textContent = 'コピー'; btn.style.background = ''; }, 2000);
   }
   function fallbackCopy() {
     ta.removeAttribute('readonly');
@@ -106,17 +102,12 @@
     if (ok) showOk();
     else alert('自動コピーに失敗しました。上の枠のコードを長押し（または全選択）して手動でコピーしてください。');
   }
-  document.getElementById('copyBtn').addEventListener('click', function () {
+  btn.addEventListener('click', function () {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(BM).then(showOk, fallbackCopy);
     } else {
       fallbackCopy();
     }
-  });
-  // ドラッグ用リンクは誤クリックでも遷移しないようにする（ドラッグ専用）
-  document.getElementById('dragLink').addEventListener('click', function (e) {
-    e.preventDefault();
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(BM).then(showOk, function(){});
   });
 </script>
 </body>
