@@ -1,8 +1,9 @@
-/* popn medal-census DIAGNOSTIC v10 (narrow the 9 arcade-excluded songs).
-   Deduced: the 9 extras have all 4 difficulties, LIGHT = none (unplayed), and
-   EX medal in {b=フルコンボ★ x1, e=クリア★ x3, f=クリア◆ x5}.
-   Sweep 曲データ (mu_top), list songs matching that profile with genre/title and
-   their N/H medals so we can pin the 9. ~83 requests. */
+/* popn medal-census DIAGNOSTIC v11 (isolate the ~9 cabinet-excluded songs).
+   Real cause (confirmed by user): 筐体は「解禁済みの曲」だけ数える。eagate 曲データは
+   解禁に関わらず全曲。だから "eagateに記録はあるが筐体で未解禁" の曲が超過になる。
+   その曲は EX しか触っていない → L=N=H=none & EX=クリア/FC。
+   Sweep 曲データ (mu_top), list songs with THAT tight profile so the 9 pop out.
+   ~83 requests. Run on a logged-in playdata page. */
 void (async function () {
 var B = "https://p.eagate.573.jp/game/popn/popn29/playdata", P = new DOMParser(), D = document, b = D.body, DELAY = 110;
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -22,7 +23,7 @@ while (1) {
     var mm = (a.getAttribute("href") || "").match(/[?&]no=([^&"']+)/), no = mm ? mm[1] : a.textContent;
     if (seen[no]) continue; seen[no] = 1;
     var c0 = a.parentElement, ps = c0.querySelectorAll("p");
-    var genre = ps[0] ? ps[0].textContent.trim() : "", title = (a.textContent || "").trim();
+    var genre = ps[0] ? ps[0].textContent.trim() : "", artist = ps[1] ? ps[1].textContent.trim() : "", title = (a.textContent || "").trim();
     var med = {}, order = ["L", "N", "H", "EX"], slot = c0.nextElementSibling;
     for (var i = 0; i < 4; i++) {
       slot = slot && slot.nextElementSibling; if (!slot) break;
@@ -31,20 +32,23 @@ while (1) {
       var im = slot.querySelector("img"), md = im && (im.getAttribute("src") || "").match(/meda_([a-z]+)\.png/);
       med[order[i]] = md ? md[1] : "none";
     }
-    songs.push({ genre: genre, title: title, med: med });
+    songs.push({ genre: genre, title: title, artist: artist, med: med });
   }
   pre.textContent = "取得中… " + (pg + 1) + "ページ songs=" + songs.length; pg++; await sleep(DELAY);
 }
 pre.textContent = "";
-log("=== CANDIDATE FILTER: all-4-diff & LIGHT=none & EX in {b,e,f} ===");
+log("=== TIGHT PROFILE: all-4-diff exist & L=N=H=none & EX in {b,e,f} ===");
 log("total songs: " + songs.length);
 var cand = songs.filter(function (s) {
-  return s.med.L && s.med.N && s.med.H && s.med.EX && s.med.L === "none" && (s.med.EX === "b" || s.med.EX === "e" || s.med.EX === "f");
+  var m = s.med;
+  return m.L && m.N && m.H && m.EX && m.L === "none" && m.N === "none" && m.H === "none" && (m.EX === "b" || m.EX === "e" || m.EX === "f");
 });
+log("matched: " + cand.length + " songs  (target = 9: 1×FC★ + 3×クリア★ + 5×クリア◆)\n");
 ["b", "e", "f"].forEach(function (ex) {
   var g = cand.filter(function (s) { return s.med.EX === ex; });
-  log("\n--- EX=" + MN[ex] + " : " + g.length + " songs (need " + (ex === "b" ? 1 : ex === "e" ? 3 : 5) + ") ---");
-  g.forEach(function (s) { log("[N=" + MN[s.med.N] + " H=" + MN[s.med.H] + "] " + s.genre + " | " + s.title); });
+  log("--- EX=" + MN[ex] + " : " + g.length + " songs ---");
+  g.forEach(function (s) { log("  " + s.genre + " | " + s.title + "  <" + s.artist + ">"); });
+  log("");
 });
-log("\n--- copy everything above and paste back ---");
+log("--- copy everything above and paste back ---");
 })();
