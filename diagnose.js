@@ -17,16 +17,17 @@ var lis = doc0.querySelectorAll("ul.mu_list_lv_table>li");
 var targets = [];
 for (var i = 0; i < lis.length && targets.length < 3; i++) {
   var li = lis[i]; if (li.className == "st_th") continue;
-  var a = li.querySelector('a[href*="mu_detail"]'), mm = a && (a.getAttribute("href") || "").match(/[?&]no=([^&"']+)/);
-  if (mm) targets.push({ no: mm[1], title: (li.querySelector("a") || {}).textContent || "" });
+  var a = li.querySelector('a[href*="mu_detail"]');
+  if (a) targets.push({ href: new URL(a.getAttribute("href"), B + "/").href, title: (li.querySelector("a") || {}).textContent || "" });
 }
 pre.textContent = "";
 log("=== mu_detail STRUCTURE PROBE ===");
 for (var t = 0; t < targets.length; t++) {
   var tg = targets[t];
-  log("\n############ no=" + tg.no + "  title=" + tg.title + " ############");
+  log("\n############ title=" + tg.title + " ############");
+  log("url=" + tg.href.replace(B, ""));
   var d;
-  try { d = await get(B + "/mu_detail.html?no=" + encodeURIComponent(tg.no) + "&back=index"); } catch (e) { log("fetch error: " + e.message); continue; }
+  try { d = await get(tg.href); } catch (e) { log("fetch error: " + e.message); continue; }
   /* element ids present */
   var ided = d.querySelectorAll("[id]"); var ids = [];
   for (var x = 0; x < ided.length; x++) ids.push(ided[x].id);
