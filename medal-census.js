@@ -1,44 +1,49 @@
-/* pop'n TOTAL MEDALS - difficulty x medal count (symbols) with localStorage cache + throttle. */
-/* Run on a logged-in e-amusement pop'n playdata page. */
+/* pop'n TOTAL MEDALS - difficulty x medal count (symbols) with localStorage cache. */
+/* v2: enumerate via 曲データ (mu_top.html) — difficulty by POSITION (no guessing),
+   each song once (no dedup needed), ~83 requests. Run on a logged-in playdata page. */
 void (async function () {
 var B = "https://p.eagate.573.jp/game/popn/popn29/playdata", P = new DOMParser(), D = document, b = D.body;
-var VER = "1.1", CK = "popn_medal_cache_v1", TTL = 12 * 3600 * 1000, DELAY = 120;
+var VER = "2.0", CK = "popn_medal_cache_v2", TTL = 12 * 3600 * 1000, DELAY = 120;
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function dec(r) { return r.arrayBuffer().then(function (a) { return ((r.headers.get("Content-Type") || "").indexOf("UTF-8") < 0 ? new TextDecoder("Shift_JIS") : new TextDecoder()).decode(a); }); }
 function get(u) { return fetch(u).then(dec).then(function (t) { return P.parseFromString(t, "text/html"); }); }
-function diff(li) {
-  var g = li.querySelectorAll("img"), i, x;
-  for (i = 0; i < g.length; i++) { x = ((g[i].getAttribute("src") || "") + " " + (g[i].getAttribute("alt") || "") + " " + (g[i].getAttribute("title") || "")).toLowerCase(); if (x.indexOf("meda_") >= 0) continue; if (/(^|[^a-z])ex([^a-z]|$)/.test(x) || x.indexOf("_ex") >= 0) return "EX"; if (x.indexOf("hyper") >= 0 || /_h[._]/.test(x)) return "HYPER"; if (x.indexOf("normal") >= 0 || /_n[._]/.test(x)) return "NORMAL"; if (x.indexOf("light") >= 0 || x.indexOf("easy") >= 0 || /_[le][._]/.test(x)) return "LIGHT"; }
-  var a = li.querySelectorAll("*"); for (i = 0; i < a.length; i++) { x = (a[i].className || "").toString().toLowerCase(); if (/(^|[^a-z])ex([^a-z]|$)/.test(x)) return "EX"; if (/hyper/.test(x)) return "HYPER"; if (/normal/.test(x)) return "NORMAL"; if (/light|easy/.test(x)) return "LIGHT"; }
-  x = (li.textContent || "").toUpperCase(); if (/(^|[^A-Z])EX([^A-Z]|$)/.test(x)) return "EX"; if (/HYPER/.test(x)) return "HYPER"; if (/NORMAL/.test(x)) return "NORMAL"; if (/LIGHT|EASY/.test(x)) return "LIGHT"; return "unknown";
-}
-var O = [["a", "★", "r", "パーフェクト"], ["b", "★", "#9aa4ad", "フルコンボ"], ["c", "◆", "#9aa4ad", "フルコンボ"], ["d", "●", "#9aa4ad", "フルコンボ"], ["e", "★", "#e2445c", "クリア"], ["f", "◆", "#e2445c", "クリア"], ["g", "●", "#e2445c", "クリア"], ["l", "✿", "#f0932b", "ロングオフクリア"], ["k", "✿", "#3aae5a", "イージークリア"], ["h", "★", "#3a7bd5", "クリア失敗"], ["i", "◆", "#3a7bd5", "クリア失敗"], ["j", "●", "#3a7bd5", "クリア失敗"], ["none", "○", "#bbb", "メダルなし"]];
-var F = ["LIGHT", "NORMAL", "HYPER", "EX"], FC = { LIGHT: "#3a7bd5", NORMAL: "#2e9e4f", HYPER: "#c98a00", EX: "#d82f66", unknown: "#888" }, CL = { LIGHT: "LIGHT", NORMAL: "NORMAL", HYPER: "HYPER", EX: "EX", unknown: "不明" };
 
-function setStatus(t) { var e = D.getElementById("mcst"); if (e) e.textContent = t; }
-
+/* mu_top: each <li> = one song. After the title div, sibling divs are the difficulty
+   slots in fixed order [OTHER, LIGHT, NORMAL, HYPER, EX]. A slot whose score text is
+   "-" has no chart; otherwise the chart exists (medal from meda_X.png, none = unplayed). */
 async function sweep(onProg) {
-  var R = [], lv, pg, doc, L, q, e, m;
-  for (lv = 1; lv <= 50; lv++) {
-    pg = 0;
-    while (1) {
-      doc = await get(B + "/mu_lv.html?page=" + pg + "&version=-1&bemani=0&category=0&keyword=&sort=none&lv=" + lv);
-      L = doc.querySelectorAll("ul.mu_list_lv_table>li"); if (!L.length) break;
-      for (q = 0; q < L.length; q++) { if (L[q].className == "st_th") continue; e = L[q].children[3]; m = e && e.querySelector("img"); m = m && (m.getAttribute("src") || "").match(/meda_([a-z]+)\.png/); R.push({ d: diff(L[q]), m: m ? m[1] : "none" }); }
-      onProg(lv, R.length); pg++; await sleep(DELAY);
+  var R = [], seen = {}, order = ["LIGHT", "NORMAL", "HYPER", "EX"], pg = 0;
+  while (1) {
+    var doc = await get(B + "/mu_top.html?page=" + pg + "&version=-1&bemani=0&category=0&keyword=&sort=music&sort_type=up");
+    var lis = doc.querySelectorAll("ul.mu_list_table>li"); if (!lis.length) break;
+    for (var q = 0; q < lis.length; q++) {
+      var li = lis[q], a = li.querySelector('a[href*="mu_detail"]'); if (!a) continue;
+      var mm = (a.getAttribute("href") || "").match(/[?&]no=([^&"']+)/), no = mm ? mm[1] : a.textContent;
+      if (seen[no]) continue; seen[no] = 1;
+      var slot = a.parentElement.nextElementSibling; /* [0] = OTHER */
+      for (var i = 0; i < 4; i++) {
+        slot = slot && slot.nextElementSibling; /* advance to LIGHT, NORMAL, HYPER, EX */
+        if (!slot) break;
+        var sc = (slot.textContent || "").trim(); if (sc === "-" || sc === "") continue;
+        var im = slot.querySelector("img"), md = im && (im.getAttribute("src") || "").match(/meda_([a-z]+)\.png/);
+        R.push({ d: order[i], m: md ? md[1] : "none" });
+      }
     }
+    onProg(pg + 1, R.length); pg++; await sleep(DELAY);
   }
   return R;
 }
 function agg(R) {
-  var C = {}, UK = 0; O.forEach(function (o) { C[o[0]] = { LIGHT: 0, NORMAL: 0, HYPER: 0, EX: 0, unknown: 0, T: 0 }; });
-  R.forEach(function (r) { var k = C[r.m] ? r.m : "none"; C[k][r.d]++; C[k].T++; if (r.d == "unknown") UK++; });
-  var cols = F.slice(); if (UK) cols.push("unknown");
-  return { C: C, cols: cols, n: R.length };
+  var C = {}; O.forEach(function (o) { C[o[0]] = { LIGHT: 0, NORMAL: 0, HYPER: 0, EX: 0, T: 0 }; });
+  R.forEach(function (r) { var k = C[r.m] ? r.m : "none"; C[k][r.d]++; C[k].T++; });
+  return { C: C, cols: ["LIGHT", "NORMAL", "HYPER", "EX"], n: R.length };
 }
 function load() { try { var s = localStorage.getItem(CK); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
 function save(A, t) { try { localStorage.setItem(CK, JSON.stringify({ v: VER, t: t, C: A.C, cols: A.cols, n: A.n })); } catch (e) {} }
 
+var O = [["a", "★", "r", "パーフェクト"], ["b", "★", "#9aa4ad", "フルコンボ"], ["c", "◆", "#9aa4ad", "フルコンボ"], ["d", "●", "#9aa4ad", "フルコンボ"], ["e", "★", "#e2445c", "クリア"], ["f", "◆", "#e2445c", "クリア"], ["g", "●", "#e2445c", "クリア"], ["l", "✿", "#f0932b", "ロングオフクリア"], ["k", "✿", "#3aae5a", "イージークリア"], ["h", "★", "#3a7bd5", "クリア失敗"], ["i", "◆", "#3a7bd5", "クリア失敗"], ["j", "●", "#3a7bd5", "クリア失敗"], ["none", "○", "#bbb", "メダルなし"]];
+var FC = { LIGHT: "#3a7bd5", NORMAL: "#2e9e4f", HYPER: "#c98a00", EX: "#d82f66" }, CL = { LIGHT: "LIGHT", NORMAL: "NORMAL", HYPER: "HYPER", EX: "EX" };
+function setStatus(t) { var e = D.getElementById("mcst"); if (e) e.textContent = t; }
 function sym(o) { return o[2] == "r" ? '<span class=s style="background:linear-gradient(90deg,#e2445c,#e8b923,#3aae5a,#3a7bd5);-webkit-background-clip:text;color:transparent">' + o[1] + "</span>" : '<span class=s style="color:' + o[2] + '">' + o[1] + "</span>"; }
 function render(A, meta) {
   var C = A.C, cols = A.cols;
@@ -51,17 +56,16 @@ function render(A, meta) {
   var lab = (meta.cached ? "前回取得 " + ts + "（キャッシュ・0リクエスト）" + (meta.stale ? " ⚠古い可能性→更新" : "") : "最終更新 " + ts);
   var bar = '<div id=mcbar><span id=mcst>' + lab + '</span><button id=mcbtn>更新</button></div>';
   var tstyle = "width:auto!important;max-width:560px!important;min-width:0!important;table-layout:auto!important;margin:0 auto!important;border-collapse:collapse!important;background:#fff!important;border-radius:8px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.15)";
-  b.innerHTML = "<style>#mc{font:13px sans-serif;color:#333;padding:16px}#mc td,#mc th{padding:4px 10px!important;text-align:center;border-bottom:1px solid rgba(0,0,0,.05);width:auto!important;white-space:normal}#mc th{border-bottom:2px solid #d82f66;font-size:12px}#mc td:nth-child(1),#mc th:nth-child(1){background:#fbfbe6}#mc td:nth-child(2),#mc th:nth-child(2){background:#dcefff}#mc td:nth-child(3),#mc th:nth-child(3){background:#dcf6dc}#mc td:nth-child(4),#mc th:nth-child(4){background:#fff2b8}#mc td:nth-child(5),#mc th:nth-child(5){background:#ffdde6}#mc td:nth-child(6),#mc th:nth-child(6){background:#ededed}#mc .l{text-align:left;white-space:nowrap}#mc .lc{text-align:center;white-space:nowrap}#mc .b{font-weight:bold}#mc .s{font-size:17px;display:inline-block;width:1.4em;text-align:center}#mc .sep td{border-top:2px solid #888}#mc .f td{border-top:2px solid #d82f66;font-weight:bold}#mc .n{white-space:nowrap}#mc h2{color:#d82f66;font-size:16px;text-align:center;margin:0 0 10px}#mcbar{max-width:560px;margin:8px auto 0;text-align:center;font-size:11px;color:#888}#mcbtn{margin-left:8px;font-size:11px;cursor:pointer}</style>" +
-    '<div id=mc><h2>TOTAL MEDALS</h2><table style="' + tstyle + '"><thead>' + H + "</thead><tbody>" + BD + FT + "</tbody></table>" + bar + "</div>";
+  b.innerHTML = "<style>#mc{font:13px sans-serif;color:#333;padding:16px}#mc td,#mc th{padding:4px 10px!important;text-align:center;border-bottom:1px solid rgba(0,0,0,.05);width:auto!important;white-space:normal}#mc th{border-bottom:2px solid #d82f66;font-size:12px}#mc td:nth-child(1),#mc th:nth-child(1){background:#fbfbe6}#mc td:nth-child(2),#mc th:nth-child(2){background:#dcefff}#mc td:nth-child(3),#mc th:nth-child(3){background:#dcf6dc}#mc td:nth-child(4),#mc th:nth-child(4){background:#fff2b8}#mc td:nth-child(5),#mc th:nth-child(5){background:#ffdde6}#mc td:nth-child(6),#mc th:nth-child(6){background:#ededed}#mc .l{text-align:left;white-space:nowrap}#mc .lc{text-align:center;white-space:nowrap}#mc .b{font-weight:bold}#mc .s{font-size:17px;display:inline-block;width:1.4em;text-align:center}#mc .sep td{border-top:2px solid #888}#mc .f td{border-top:2px solid #d82f66;font-weight:bold}#mc .n{white-space:nowrap}#mc h2{color:#d82f66;font-size:16px;text-align:center;margin:0 0 10px}#mcbar{max-width:560px;margin:8px auto 0;text-align:center;font-size:11px;color:#888}#mcbtn{margin-left:8px;font-size:11px;cursor:pointer}#mcnote{max-width:560px;margin:6px auto 0;text-align:center;font-size:10px;color:#aaa;line-height:1.6}</style>" +
+    '<div id=mc><h2>TOTAL MEDALS</h2><table style="' + tstyle + '"><thead>' + H + "</thead><tbody>" + BD + FT + "</tbody></table>" + '<div id=mcnote>※EXTRA・特殊解禁曲を含む eagate 上の全曲を集計しています。<br>アーケード筐体の TOTAL MEDALS とは数譜面ずれることがあります（仕様）。</div>' + bar + "</div>";
   var btn = D.getElementById("mcbtn"); if (btn) btn.onclick = function () { btn.disabled = true; refresh(); };
 }
 async function refresh() {
   setStatus("更新中…");
-  var R = await sweep(function (lv, n) { setStatus("更新中… LV" + lv + "（" + n + " 譜面）"); });
+  var R = await sweep(function (pg, n) { setStatus("更新中… " + pg + "ページ目（" + n + " 譜面）"); });
   if (!R.length) { setStatus("取得失敗：ログイン状態を確認してください"); var btn = D.getElementById("mcbtn"); if (btn) btn.disabled = false; return; }
   var A = agg(R), t = Date.now(); save(A, t); render(A, { t: t, cached: false });
 }
-
 var ch = load();
 if (ch && ch.v == VER && ch.C) {
   render({ C: ch.C, cols: ch.cols, n: ch.n }, { t: ch.t, cached: true, stale: Date.now() - ch.t >= TTL });
